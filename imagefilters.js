@@ -362,7 +362,7 @@ ImageFilters.BasicBlur = function (srcImageData) {
     ], 5);
 };
 
-ImageFilters.blendAdd = function (srcImageData, blendImageData, dx, dy) {
+ImageFilters.BlendAdd = function (srcImageData, blendImageData, dx, dy) {
     var srcPixels    = srcImageData.data,
         srcWidth     = srcImageData.width,
         srcHeight    = srcImageData.height,
@@ -383,7 +383,7 @@ ImageFilters.blendAdd = function (srcImageData, blendImageData, dx, dy) {
     return dstImageData;
 };
 
-ImageFilters.blendSubtract = function (srcImageData, blendImageData, dx, dy) {
+ImageFilters.BlendSubtract = function (srcImageData, blendImageData, dx, dy) {
     var srcPixels    = srcImageData.data,
         srcWidth     = srcImageData.width,
         srcHeight    = srcImageData.height,
@@ -777,7 +777,7 @@ ImageFilters.Crop = function (srcImageData, x, y, width, height) {
     return dstImageData;
 };
 
-ImageFilters.Crop2 = function (srcImageData, x, y, width, height) {
+ImageFilters.CropBuiltin = function (srcImageData, x, y, width, height) {
     var srcWidth  = srcImageData.width,
         srcHeight = srcImageData.height,
         canvas    = this.utils.getSampleCanvas(),
