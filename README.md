@@ -22,7 +22,7 @@ and always return a modified copy. Below is a basic example.
 	  var imageData = ctx.getImageData(0, 0, 300, 200);
 	  
 	  // pass it to a filter and get the modified copy
-	  var filterd = ImageFilters.GrayScale(imageData);
+	  var filtered = ImageFilters.GrayScale(imageData);
 	  
 	  // put it back into a context to view the results
 	  ctx.putImageData(filterd, 0, 0);
