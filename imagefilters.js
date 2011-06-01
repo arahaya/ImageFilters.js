@@ -317,10 +317,10 @@ ImageFilters.ConvolutionFilter = function (srcImageData, matrixX, matrixY, matri
                 }
             }
 
-            dstPixels[index++] = (v = r / divisor + bias | 0) > 255 ? 255 : v < 0 ? 0 : v;
-            dstPixels[index++] = (v = g / divisor + bias | 0) > 255 ? 255 : v < 0 ? 0 : v;
-            dstPixels[index++] = (v = b / divisor + bias | 0) > 255 ? 255 : v < 0 ? 0 : v;
-            dstPixels[index++] = preserveAlpha ? 255 : (v = a / divisor + bias | 0) > 255 ? 255 : v < 0 ? 0 : v;
+            dstPixels[index++] = (v = r / divisor + bias) > 255 ? 255 : v < 0 ? 0 : v | 0;
+            dstPixels[index++] = (v = g / divisor + bias) > 255 ? 255 : v < 0 ? 0 : v | 0;
+            dstPixels[index++] = (v = b / divisor + bias) > 255 ? 255 : v < 0 ? 0 : v | 0;
+            dstPixels[index++] = preserveAlpha ? 255 : (v = a / divisor + bias) > 255 ? 255 : v < 0 ? 0 : v | 0;
         }
     }
 
@@ -706,10 +706,10 @@ ImageFilters.ColorMatrixFilter = function (srcImageData, matrix) {
         b = srcPixels[i + 2];
         a = srcPixels[i + 3];
 
-        dstPixels[i++] = (value = r *  m0 + g *  m1 + b *  m2 + a *  m3 +  m4) > 255 ? 255 : value < 0 ? 0 : value;
-        dstPixels[i++] = (value = r *  m5 + g *  m6 + b *  m7 + a *  m8 +  m9) > 255 ? 255 : value < 0 ? 0 : value;
-        dstPixels[i++] = (value = r * m10 + g * m11 + b * m12 + a * m13 + m14) > 255 ? 255 : value < 0 ? 0 : value;
-        dstPixels[i++] = (value = r * m15 + g * m16 + b * m17 + a * m18 + m19) > 255 ? 255 : value < 0 ? 0 : value;
+        dstPixels[i++] = (value = r *  m0 + g *  m1 + b *  m2 + a *  m3 +  m4) > 255 ? 255 : value < 0 ? 0 : value | 0;
+        dstPixels[i++] = (value = r *  m5 + g *  m6 + b *  m7 + a *  m8 +  m9) > 255 ? 255 : value < 0 ? 0 : value | 0;
+        dstPixels[i++] = (value = r * m10 + g * m11 + b * m12 + a * m13 + m14) > 255 ? 255 : value < 0 ? 0 : value | 0;
+        dstPixels[i++] = (value = r * m15 + g * m16 + b * m17 + a * m18 + m19) > 255 ? 255 : value < 0 ? 0 : value | 0;
     }
 
     return dstImageData;
@@ -905,6 +905,14 @@ ImageFilters.Emboss = function (srcImageData) {
         -1,  1, 1,
          0,  1, 2
     ]);
+};
+
+ImageFilters.Enrich = function (srcImageData) {
+    return this.ConvolutionFilter(srcImageData, 3, 3, [
+         0, -2,  0,
+        -2, 20, -2,
+         0, -2,  0
+    ], 10, -40);
 };
 
 ImageFilters.Flip = function (srcImageData, vertical) {
