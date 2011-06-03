@@ -409,7 +409,7 @@ ImageFilters.BoxBlur = function (srcImageData, hRadius, vRadius, quality) {
         srcWidth     = srcImageData.width,
         srcHeight    = srcImageData.height,
         srcLength    = srcPixels.length,
-        dstImageData = this.Clone(srcImageData), // clone the src
+        dstImageData = this.utils.createImageData(srcWidth, srcHeight),
         dstPixels    = dstImageData.data,
         tmpImageData = this.utils.createImageData(srcWidth, srcHeight),
         tmpPixels    = tmpImageData.data;
@@ -469,8 +469,9 @@ ImageFilters.BoxBlur = function (srcImageData, hRadius, vRadius, quality) {
         }
     };
 
-    while (quality--) {
-        blur(dstPixels, tmpPixels, srcWidth, srcHeight, hRadius);
+    for (var i = 0; i < quality; ++i) {
+        // only use the srcPixels on the first loop
+        blur(i ? dstPixels : srcPixels, tmpPixels, srcWidth, srcHeight, hRadius);
         blur(tmpPixels, dstPixels, srcHeight, srcWidth, vRadius);
     }
 
