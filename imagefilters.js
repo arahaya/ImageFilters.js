@@ -1340,6 +1340,31 @@ ImageFilters.Solarize = function (srcImageData) {
     return dstImageData;
 };
 
+ImageFilters.Transpose = function (srcImageData) {
+    var srcPixels    = srcImageData.data,
+        srcWidth     = srcImageData.width,
+        srcHeight    = srcImageData.height,
+        srcLength    = srcPixels.length,
+        dstImageData = this.utils.createImageData(srcHeight, srcWidth),
+        dstPixels    = dstImageData.data;
+    
+    var srcIndex, dstIndex;
+    
+    for (y = 0; y < srcHeight; ++y) {
+        for (x = 0; x < srcWidth; ++x) {
+            srcIndex = (y * srcWidth + x) * 4;
+            dstIndex = (x * srcHeight + y) * 4;
+
+            dstPixels[dstIndex]   = srcPixels[srcIndex];
+            dstPixels[++dstIndex] = srcPixels[++srcIndex];
+            dstPixels[++dstIndex] = srcPixels[++srcIndex];
+            dstPixels[++dstIndex] = srcPixels[++srcIndex];
+        }
+    }
+    
+    return dstImageData;
+};
+
 /**
  * @param centerX 0.0 <= n <= 1.0
  * @param centerY 0.0 <= n <= 1.0

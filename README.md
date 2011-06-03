@@ -86,6 +86,7 @@ ImageFilters.ResizeNearestNeighbor (srcImageData, width, height)
 ImageFilters.Sepia srcImageData)  
 ImageFilters.Sharpen (srcImageData, factor)  
 ImageFilters.Solarize (srcImageData)  
+ImageFilters.Transpose (srcImageData)  
 ImageFilters.Twril (srcImageData, centerX, centerY, radius, angle, edge, smooth)  
 
 
