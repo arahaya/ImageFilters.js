@@ -1125,6 +1125,86 @@ ImageFilters.Mosaic = function (srcImageData, blockSize) {
     return dstImageData;
 };
 
+/**
+ * @param range  1 <= n <= 5
+ * @param levels 1 <= n <= 256
+ */
+ImageFilters.Oil = function (srcImageData, range, levels) {
+    var srcPixels    = srcImageData.data,
+        srcWidth     = srcImageData.width,
+        srcHeight    = srcImageData.height,
+        srcLength    = srcPixels.length,
+        dstImageData = this.utils.createImageData(srcWidth, srcHeight),
+        dstPixels    = dstImageData.data;
+    
+    var index = 0;
+    var rh = [];
+    var gh = [];
+    var bh = [];
+    var rt = [];
+    var gt = [];
+    var bt = [];
+    
+    for (var y = 0; y < srcHeight; ++y) {
+        for (var x = 0; x < srcWidth; ++x) {
+            for (var i = 0; i < levels; ++i) {
+                rh[i] = gh[i] = bh[i] = rt[i] = gt[i] = bt[i] = 0;
+            }
+            
+            for (var row = -range; row <= range; ++row) {
+                var rowIndex = y + row;
+                if (rowIndex < 0 || rowIndex >= srcHeight) {
+                    continue;
+                }
+                var offset = rowIndex * srcWidth;
+                for (var col = -range; col <= range; ++col)
+                {
+                    var colIndex = x + col;
+                    if (colIndex < 0 || colIndex >= srcWidth) {
+                        continue;
+                    }
+                    
+                    var srcIndex = (offset + colIndex) * 4;
+                    var sr = srcPixels[srcIndex];
+                    var sg = srcPixels[++srcIndex];
+                    var sb = srcPixels[++srcIndex];
+                    var ri = (sr * levels) / 256 | 0;
+                    var gi = (sg * levels) / 256 | 0;
+                    var bi = (sb * levels) / 256 | 0;
+                    rt[ri] += sr;
+                    gt[gi] += sg;
+                    bt[bi] += sb;
+                    rh[ri]++;
+                    gh[gi]++;
+                    bh[bi]++;
+                }
+            }
+
+            var r = 0;
+            var g = 0;
+            var b = 0;
+            for(var k = 1; k < levels; ++k) {
+                if(rh[k] > rh[r]) {
+                    r = k;
+                }
+                if(gh[k] > gh[g]) {
+                    g = k;
+                }
+                if(bh[k] > bh[b]) {
+                    b = k;
+                }
+            }
+
+            dstPixels[index]   = rt[r] / rh[r] | 0;
+            dstPixels[++index] = gt[g] / gh[g] | 0;
+            dstPixels[++index] = bt[b] / bh[b] | 0;
+            dstPixels[++index] = srcPixels[index++];
+        }
+    }
+
+    return dstImageData;
+};
+
 ImageFilters.OpacityFilter = function (srcImageData, opacity) {
     var srcPixels    = srcImageData.data,
         srcWidth     = srcImageData.width,
