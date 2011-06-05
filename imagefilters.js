@@ -51,91 +51,113 @@ ImageFilters.utils = {
     mapRGB: function (src, dst, func) {
         this.applyMap(src, dst, this.buildMap(func));
     },
-    getPixelIndex: function (width, height, x, y, edge) {
+    getPixelIndex: function (x, y, width, height, edge) {
         if (x < 0 || x >= width || y < 0 || y >= height) {
             switch (edge) {
-            // clamp
-            case 1:
-                x = (x < 0) ? 0 : (x >= width) ? width - 1 : x;
-                y = (y < 0) ? 0 : (y >= height) ? height - 1 : y;
+            case 1: // clamp
+                x = x < 0 ? 0 : x >= width ? width - 1 : x;
+                y = y < 0 ? 0 : y >= height ? height - 1 : y;
                 break;
-            // wrap
-            case 2:
-                x = ((x %= width) < 0) ? x + width : x;
-                y = ((y %= height) < 0) ? y + height : y;
+            case 2: // wrap
+                x = (x %= width) < 0 ? x + width : x;
+                y = (y %= height) < 0 ? y + height : y;
                 break;
-            default:
+            default: // transparent
                 return null;
             }
         }
         return (y * width + x) * 4;
     },
-    copyBilinear: function (src, width, height, x, y, dst, dstIndex, edge) {
-        // TODO the wrap results are still weird.
-        var floorX  = x | 0,
-            floorY  = y | 0,
-            weightX = x - floorX,
-            weightY = y - floorY,
-            nw, ne, sw, se;
-
-        nw = this.getPixelIndex(width, height, floorX, floorY, edge);
-
-        if (weightX === 0 && weightY === 0) {
-            // no weight, just copy the top left pixel
-            if (nw) {
-                dst[dstIndex]   = src[nw];
-                dst[++dstIndex] = src[++nw];
-                dst[++dstIndex] = src[++nw];
-                dst[++dstIndex] = src[++nw];
+    getPixel: function (src, x, y, width, height, edge) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            switch (edge) {
+            case 1: // clamp
+                x = x < 0 ? 0 : x >= width ? width - 1 : x;
+                y = y < 0 ? 0 : y >= height ? height - 1 : y;
+                break;
+            case 2: // wrap
+                x = (x %= width) < 0 ? x + width : x;
+                y = (y %= height) < 0 ? y + height : y;
+                break;
+            default: // transparent
+                return 0;
             }
-            return;
         }
-
-        ne = (weightX === 0) ? nw : this.getPixelIndex(width, height, floorX + 1, floorY, edge);
-        sw = (weightY === 0) ? nw : this.getPixelIndex(width, height, floorX, floorY + 1, edge);
-        se = (weightX === 0) ? sw : (weightY === 0) ? ne : this.getPixelIndex(width, height, floorX + 1, floorY + 1, edge);
-
-        var r0 = 0, r1 = 0, r2 = 0, r3 = 0,
-            g0 = 0, g1 = 0, g2 = 0, g3 = 0,
-            b0 = 0, b1 = 0, b2 = 0, b3 = 0,
-            a0 = 0, a1 = 0, a2 = 0, a3 = 0;
-
-        if (nw !== null) {
-            r0 = src[nw];
-            g0 = src[++nw];
-            b0 = src[++nw];
-            a0 = src[++nw];
+        
+        var i = (y * width + x) * 4;
+        
+        // ARGB
+        return src[i] << 16 | src[++i] << 8 | src[++i] | src[++i] << 24;
+    },
+    getPixelByIndex: function (src, i) {
+        return src[i + 3] << 24 | src[i] << 16 | src[i + 1] << 8 | src[i + 2];
+    },
+    /**
+     * one of the most important functions in this library.
+     * I want to make this as fast as possible.
+     */
+    // ver 3
+    copyBilinear: function (src, x, y, width, height, dst, dstIndex, edge) {
+        var fx = x | 0,
+            fy = y | 0,
+            wx = x - fx,
+            wy = y - fy,
+            i,
+            nw = 0, ne = 0, sw = 0, se = 0,
+            cx, cy,
+            r, g, b, a;
+        
+        if (fx >= 0 && fx < (width - 1) && fy >= 0 && fy < (height - 1)) {
+            // in bounds, no edge actions required
+            i = (fy * width + fx) * 4;
+            
+            if (wx || wy) {
+                nw = src[i++] << 16 | src[i++] << 8 | src[i++] | src[i++] << 24;
+                ne = src[i++] << 16 | src[i++] << 8 | src[i++] | src[i++] << 24;
+                
+                i = (i - 8) + width * 4;
+                sw = src[i++] << 16 | src[i++] << 8 | src[i++] | src[i++] << 24;
+                se = src[i++] << 16 | src[i++] << 8 | src[i++] | src[i] << 24;
+            }
+            else {
+                // no interpolation required
+                dst[dstIndex]   = src[i];
+                dst[++dstIndex] = src[++i];
+                dst[++dstIndex] = src[++i];
+                dst[++dstIndex] = src[++i];
+                return;
+            }
         }
-        if (ne !== null) {
-            r1 = src[ne];
-            g1 = src[++ne];
-            b1 = src[++ne];
-            a1 = src[++ne];
+        else {
+            // edge actions required
+            nw = this.getPixel(src, fx, fy, width, height, edge);
+            
+            if (wx || wy) {
+                ne = this.getPixel(src, fx + 1, fy, width, height, edge);
+                sw = this.getPixel(src, fx, fy + 1, width, height, edge);
+                se = this.getPixel(src, fx + 1, fy + 1, width, height, edge);
+            }
+            else {
+                // no interpolation required
+                dst[dstIndex]   = nw >> 16 & 0xFF;
+                dst[++dstIndex] = nw >> 8  & 0xFF;
+                dst[++dstIndex] = nw       & 0xFF;
+                dst[++dstIndex] = nw >> 24 & 0xFF;
+                return;
+            }
         }
-        if (sw !== null) {
-            r2 = src[sw];
-            g2 = src[++sw];
-            b2 = src[++sw];
-            a2 = src[++sw];
-        }
-        if (se !== null) {
-            r3 = src[se];
-            g3 = src[++se];
-            b3 = src[++se];
-            a3 = src[++se];
-        }
-
-        var cx = 1 - weightX,
-            cy = 1 - weightY,
-            r = cy * (cx * r0 + weightX * r1) + weightY * (cx * r2 + weightX * r3),
-            g = cy * (cx * g0 + weightX * g1) + weightY * (cx * g2 + weightX * g3),
-            b = cy * (cx * b0 + weightX * b1) + weightY * (cx * b2 + weightX * b3),
-            a = cy * (cx * a0 + weightX * a1) + weightY * (cx * a2 + weightX * a3);
-
-        dst[dstIndex]   = (r < 0) ? 0 : (r > 255) ? 255 : r + 0.5 | 0;
-        dst[++dstIndex] = (g < 0) ? 0 : (g > 255) ? 255 : g + 0.5 | 0;
-        dst[++dstIndex] = (b < 0) ? 0 : (b > 255) ? 255 : b + 0.5 | 0;
-        dst[++dstIndex] = (a < 0) ? 0 : (a > 255) ? 255 : a + 0.5 | 0;
+        
+        cx = 1 - wx;
+        cy = 1 - wy;
+        r = ((nw >> 16 & 0xFF) * cx + (ne >> 16 & 0xFF) * wx) * cy + ((sw >> 16 & 0xFF) * cx + (se >> 16 & 0xFF) * wx) * wy;
+        g = ((nw >> 8  & 0xFF) * cx + (ne >> 8  & 0xFF) * wx) * cy + ((sw >> 8  & 0xFF) * cx + (se >> 8  & 0xFF) * wx) * wy;
+        b = ((nw       & 0xFF) * cx + (ne       & 0xFF) * wx) * cy + ((sw       & 0xFF) * cx + (se       & 0xFF) * wx) * wy;
+        a = ((nw >> 24 & 0xFF) * cx + (ne >> 24 & 0xFF) * wx) * cy + ((sw >> 24 & 0xFF) * cx + (se >> 24 & 0xFF) * wx) * wy;
+        
+        dst[dstIndex]   = r > 255 ? 255 : r < 0 ? 0 : r | 0;
+        dst[++dstIndex] = g > 255 ? 255 : g < 0 ? 0 : g | 0;
+        dst[++dstIndex] = b > 255 ? 255 : b < 0 ? 0 : b | 0;
+        dst[++dstIndex] = a > 255 ? 255 : a < 0 ? 0 : a | 0;
     },
     /**
      * @param r 0 <= n <= 255
@@ -233,6 +255,24 @@ ImageFilters.utils = {
 
         return rgb;
     }
+};
+
+
+// TODO
+ImageFilters.Translate = function (srcImageData, x, y, interpolation) {
+
+};
+ImageFilters.Scale = function (srcImageData, scaleX, scaleY, interpolation) {
+
+};
+ImageFilters.Rotate = function (srcImageData, originX, originY, angle, resize, interpolation) {
+
+};
+ImageFilters.Affine = function (srcImageData, matrix, resize, interpolation) {
+
+};
+ImageFilters.UnsharpMask = function (srcImageData, level) {
+
 };
 
 ImageFilters.ConvolutionFilter = function (srcImageData, matrixX, matrixY, matrix, divisor, bias, preserveAlpha, clamp, color, alpha) {
@@ -757,17 +797,18 @@ ImageFilters.Crop = function (srcImageData, x, y, width, height) {
         dstImageData = this.utils.createImageData(width, height),
         dstPixels    = dstImageData.data;
 
-    var srcLeft   = Math.max(x, 0);
-    var srcTop    = Math.max(y, 0);
-    var srcRight  = Math.min(x + width, srcWidth);
-    var srcBottom = Math.min(y + height, srcHeight);
-    var dstLeft   = srcLeft - x;
-    var dstTop    = srcTop - y;
+    var srcLeft   = Math.max(x, 0),
+        srcTop    = Math.max(y, 0),
+        srcRight  = Math.min(x + width, srcWidth),
+        srcBottom = Math.min(y + height, srcHeight),
+        dstLeft   = srcLeft - x,
+        dstTop    = srcTop - y,
+        srcRow, srcCol, srcIndex, dstIndex;
 
-    for (var srcRow = srcTop, dstRow = dstTop; srcRow < srcBottom; ++srcRow, ++dstRow) {
-        for (var srcCol = srcLeft, dstCol = dstLeft; srcCol < srcRight; ++srcCol, ++dstCol) {
-            var srcIndex = (srcRow * srcWidth * 4) + (srcCol * 4);
-            var dstIndex = (dstRow * width * 4) + (dstCol * 4);
+    for (srcRow = srcTop, dstRow = dstTop; srcRow < srcBottom; ++srcRow, ++dstRow) {
+        for (srcCol = srcLeft, dstCol = dstLeft; srcCol < srcRight; ++srcCol, ++dstCol) {
+            srcIndex = (srcRow * srcWidth + srcCol) * 4;
+            dstIndex = (dstRow * width    + dstCol) * 4;
             dstPixels[dstIndex]   = srcPixels[srcIndex];
             dstPixels[++dstIndex] = srcPixels[++srcIndex];
             dstPixels[++dstIndex] = srcPixels[++srcIndex];
@@ -873,7 +914,7 @@ ImageFilters.DisplacementMapFilter = function (srcImageData, mapImageData, mapX,
                 //copyBilinear: function (src, width, height, x, y, dst, dstIndex, edge) {
                 //ImageFilters.utils.copyBilinear(srcPixels, srcWidth, srcHeight, tx, ty, dstPixels, dstIndex, mode)
 
-                srcIndex = ImageFilters.utils.getPixelIndex(srcWidth, srcHeight, tx + 0.5 | 0, ty + 0.5 | 0, mode);
+                srcIndex = ImageFilters.utils.getPixelIndex(tx + 0.5 | 0, ty + 0.5 | 0, srcWidth, srcHeight, mode);
                 if (srcIndex === null) {
                     // if mode == ignore and (tx,ty) is out of src bounds
                     // then copy (x,y) to dst
@@ -1327,9 +1368,9 @@ ImageFilters.Resize = function (srcImageData, width, height) {
     var yFactor = srcHeight / height;
     var dstIndex = 0;
 
-    for (var y = 1; y <= height; ++y) {
-        for (var x = 1; x <= width; ++x) {
-            this.utils.copyBilinear(srcPixels, srcWidth, srcHeight, x * xFactor - 1, y * yFactor - 1, dstPixels, dstIndex, 0);
+    for (var y = 0; y < height; ++y) {
+        for (var x = 0; x < width; ++x) {
+            this.utils.copyBilinear(srcPixels, x * xFactor, y * yFactor, srcWidth, srcHeight, dstPixels, dstIndex, 0);
             dstIndex += 4;
         }
     }
@@ -1385,9 +1426,6 @@ ImageFilters.Sepia = function (srcImageData) {
         dstPixels[i++] = (value = r * 0.393 + g * 0.769 + b * 0.189) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
         dstPixels[i++] = (value = r * 0.349 + g * 0.686 + b * 0.168) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
         dstPixels[i++] = (value = r * 0.272 + g * 0.534 + b * 0.131) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
-        //dstPixels[i++] = this.utils.clamp((r * 0.393 + g * 0.769 + b * 0.189) + 0.5 | 0);
-        //dstPixels[i++] = this.utils.clamp((r * 0.349 + g * 0.686 + b * 0.168) + 0.5 | 0);
-        //dstPixels[i++] = this.utils.clamp((r * 0.272 + g * 0.534 + b * 0.131) + 0.5 | 0);
         dstPixels[i]   = srcPixels[i++];
     }
 
@@ -1500,7 +1538,7 @@ ImageFilters.Twril = function (srcImageData, centerX, centerY, radius, angle, ed
                 // copy target pixel
                 if (smooth) {
                     // bilinear
-                    this.utils.copyBilinear(srcPixels, srcWidth, srcHeight, tx, ty, dstPixels, dstIndex, edge);
+                    this.utils.copyBilinear(srcPixels, tx, ty, srcWidth, srcHeight, dstPixels, dstIndex, edge);
                 }
                 else {
                     // nearest neighbor
@@ -1517,6 +1555,3 @@ ImageFilters.Twril = function (srcImageData, centerX, centerY, radius, angle, ed
     return dstImageData;
 };
 
-ImageFilters.UnsharpMaskFilter = function (srcImageData, level) {
-    // ...
-};

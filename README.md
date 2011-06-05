@@ -1,7 +1,10 @@
 ImageFilters.js
 ======
   
-An image filters library for the HTML5 canvas tag.  
+### About ###
+
+A Javascript Image filter library for the HTML5 Canvas tag.  
+  
   
 ### Usage ###
 
@@ -29,8 +32,8 @@ and always return a modified copy. Below is a basic example.
 	</script>
 
 check out the Examples section for more details.
-
-
+  
+  
 ### Examples ###
 Basic usage (view source)  
 <http://www.arahaya.com/imagefilters/usage1/>  
