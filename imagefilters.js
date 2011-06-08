@@ -181,7 +181,7 @@ ImageFilters.utils = {
             h = 0,
             s = 0,
             // Lightness
-            l = (min + max) >> 1;
+            l = (min + max) / 2;
 
         if (chroma !== 0) {
             // Hue
