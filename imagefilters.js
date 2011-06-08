@@ -96,83 +96,6 @@ ImageFilters.utils = {
      * one of the most important functions in this library.
      * I want to make this as fast as possible.
      */
-    // ver 2
-    copyBilinear: function (src, x, y, width, height, dst, dstIndex, edge) {
-        var fx = x | 0,
-            fy = y | 0,
-            wx = x - fx,
-            wy = y - fy,
-            i,
-            nw = 0, ne = 0, sw = 0, se = 0,
-            cx, cy,
-            r, g, b, a;
-        
-        if (fx >= 0 && fx < (width - 1) && fy >= 0 && fy < (height - 1)) {
-            // in bounds, no edge actions required
-            i = (fy * width + fx) << 2;
-            nw = src[i + 3] << 24 | src[i] << 16 | src[i + 1] << 8 | src[i + 2];
-            
-            if (wx || wy) {
-                if (wx) {
-                    i = (fy * width + fx + 1) << 2
-                    ne = src[i + 3] << 24 | src[i] << 16 | src[i + 1] << 8 | src[i + 2];
-                }
-                if (wy) {
-                    i = ((fy + 1) * width + fx) << 2;
-                    sw = src[i + 3] << 24 | src[i] << 16 | src[i + 1] << 8 | src[i + 2];
-                }
-                if (wx && wy) {
-                    i = (fy * width + fx + 1) << 2;
-                    se = src[i + 3] << 24 | src[i] << 16 | src[i + 1] << 8 | src[i + 2];
-                }
-            }
-            else {
-                // no interpolation required
-                dst[dstIndex]     = nw >> 16 & 0xFF;
-                dst[dstIndex + 1] = nw >> 8  & 0xFF;
-                dst[dstIndex + 2] = nw       & 0xFF;
-                dst[dstIndex + 3] = nw >> 24 & 0xFF;
-                return;
-            }
-        }
-        else {
-            // edge actions required
-            nw = this.getPixel(src, fx, fy, width, height, edge);
-            
-            if (wx || wy) {
-                if (wx) {
-                    ne = this.getPixel(src, fx + 1, fy, width, height, edge);
-                }
-                if (wy) {
-                    sw = this.getPixel(src, fx, fy + 1, width, height, edge);
-                }
-                if (wx && wy) {
-                    se = this.getPixel(src, fx + 1, fy + 1, width, height, edge);
-                }
-            }
-            else {
-                // no interpolation required
-                dst[dstIndex]     = nw >> 16 & 0xFF;
-                dst[dstIndex + 1] = nw >> 8  & 0xFF;
-                dst[dstIndex + 2] = nw       & 0xFF;
-                dst[dstIndex + 3] = nw >> 24 & 0xFF;
-                return;
-            }
-        }
-        
-        cx = 1 - wx;
-        cy = 1 - wy;
-        r = ((nw >> 16 & 0xFF) * cx + (ne >> 16 & 0xFF) * wx) * cy + ((sw >> 16 & 0xFF) * cx + (se >> 16 & 0xFF) * wx) * wy;
-        g = ((nw >> 8  & 0xFF) * cx + (ne >> 8  & 0xFF) * wx) * cy + ((sw >> 8  & 0xFF) * cx + (se >> 8  & 0xFF) * wx) * wy;
-        b = ((nw       & 0xFF) * cx + (ne       & 0xFF) * wx) * cy + ((sw       & 0xFF) * cx + (se       & 0xFF) * wx) * wy;
-        a = ((nw >> 24 & 0xFF) * cx + (ne >> 24 & 0xFF) * wx) * cy + ((sw >> 24 & 0xFF) * cx + (se >> 24 & 0xFF) * wx) * wy;
-        
-        dst[dstIndex]     = r > 255 ? 255 : r < 0 ? 0 : r | 0;
-        dst[dstIndex + 1] = g > 255 ? 255 : g < 0 ? 0 : g | 0;
-        dst[dstIndex + 2] = b > 255 ? 255 : b < 0 ? 0 : b | 0;
-        dst[dstIndex + 3] = a > 255 ? 255 : a < 0 ? 0 : a | 0;
-    },
-    // ver 3
     copyBilinear: function (src, x, y, width, height, dst, dstIndex, edge) {
         var fx = x | 0,
             fy = y | 0,
@@ -306,7 +229,7 @@ ImageFilters.utils = {
             hue = h + 1 / 3;
 
             var tmp;
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 3; i += 1) {
                 if (hue < 0) {
                     hue += 1;
                 }
@@ -1653,11 +1576,11 @@ ImageFilters.OpacityFilter = function (srcImageData, opacity) {
         dstImageData = this.utils.createImageData(srcWidth, srcHeight),
         dstPixels    = dstImageData.data;
 
-    for (var i = 0; i < srcLength;) {
-        dstPixels[i] = srcPixels[i++];
-        dstPixels[i] = srcPixels[i++];
-        dstPixels[i] = srcPixels[i++];
-        dstPixels[i++] = opacity;
+    for (var i = 0; i < srcLength; i += 4) {
+        dstPixels[i]     = srcPixels[i];
+        dstPixels[i + 1] = srcPixels[i + 1];
+        dstPixels[i + 2] = srcPixels[i + 2];
+        dstPixels[i + 3] = opacity;
     }
 
     return dstImageData;
@@ -1676,14 +1599,15 @@ ImageFilters.Posterize = function (srcImageData, levels) {
 
     levels = levels < 2 ? 2 : levels > 255 ? 255 : levels;
 
-    var map = [];
+    var map = [],
+        levelMinus1 = level - 1,
+        j = 0,
+        k = 0,
+        i;
 
-    for (var i = 0; i < levels; i++) {
-        map[i] = ((255 * i) / (levels - 1)) & 0xFF;
+    for (i = 0; i < levels; i += 1) {
+        map[i] = ((255 * i) / levelMinus1) & 0xFF;
     }
-
-    var j = 0,
-        k = 0;
 
     this.utils.mapRGB(srcPixels, dstPixels, function (value) {
         var ret = map[j];
@@ -1692,7 +1616,7 @@ ImageFilters.Posterize = function (srcImageData, levels) {
 
         if (k > 255) {
             k -= 255;
-            j++;
+            j += 1;
         }
 
         return ret;
@@ -1731,21 +1655,22 @@ ImageFilters.ResizeNearestNeighbor = function (srcImageData, width, height) {
         dstImageData = this.utils.createImageData(width, height),
         dstPixels    = dstImageData.data;
 
-    var xFactor = srcWidth / width;
-    var yFactor = srcHeight / height;
-    var dstIndex = 0;
+    var xFactor = srcWidth / width,
+        yFactor = srcHeight / height,
+        dstIndex = 0, srcIndex,
+        x, y, offset;
 
-    for (var y = 0; y < height; ++y) {
-        var srcY = (y * yFactor) | 0;
+    for (y = 0; y < height; y += 1) {
+        offset = ((y * yFactor) | 0) * srcWidth;
 
-        for (var x = 0; x < width; ++x) {
-            var srcX = (x * xFactor) | 0;
-            var srcIndex = (srcY * srcWidth + srcX) << 2;
+        for (x = 0; x < width; x += 1) {
+            srcIndex = (offset + x * xFactor) << 2;
 
-            dstPixels[dstIndex++] = srcPixels[srcIndex++];
-            dstPixels[dstIndex++] = srcPixels[srcIndex++];
-            dstPixels[dstIndex++] = srcPixels[srcIndex++];
-            dstPixels[dstIndex++] = srcPixels[srcIndex];
+            dstPixels[dstIndex]     = srcPixels[srcIndex];
+            dstPixels[dstIndex + 1] = srcPixels[srcIndex + 1];
+            dstPixels[dstIndex + 2] = srcPixels[srcIndex + 2];
+            dstPixels[dstIndex + 3] = srcPixels[srcIndex + 3];
+            dstIndex += 4;
         }
     }
 
@@ -1763,12 +1688,13 @@ ImageFilters.Resize = function (srcImageData, width, height) {
         dstImageData = this.utils.createImageData(width, height),
         dstPixels    = dstImageData.data;
 
-    var xFactor = srcWidth / width;
-    var yFactor = srcHeight / height;
-    var dstIndex = 0;
+    var xFactor = srcWidth / width,
+        yFactor = srcHeight / height,
+        dstIndex = 0,
+        x, y;
 
-    for (var y = 0; y < height; ++y) {
-        for (var x = 0; x < width; ++x) {
+    for (y = 0; y < height; y += 1) {
+        for (x = 0; x < width; x += 1) {
             this.utils.copyBilinear(srcPixels, x * xFactor, y * yFactor, srcWidth, srcHeight, dstPixels, dstIndex, 0);
             dstIndex += 4;
         }
@@ -1817,18 +1743,15 @@ ImageFilters.Sepia = function (srcImageData) {
 
     var r, g, b, i, value;
 
-    for (i = 0; i < srcLength;) {
+    for (i = 0; i < srcLength; i += 4) {
         r = srcPixels[i];
         g = srcPixels[i + 1];
         b = srcPixels[i + 2];
 
-        dstPixels[i++] = (value = r * 0.393 + g * 0.769 + b * 0.189) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
-        dstPixels[i++] = (value = r * 0.349 + g * 0.686 + b * 0.168) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
-        dstPixels[i++] = (value = r * 0.272 + g * 0.534 + b * 0.131) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
-        //dstPixels[i++] = this.utils.clamp((r * 0.393 + g * 0.769 + b * 0.189) + 0.5 | 0);
-        //dstPixels[i++] = this.utils.clamp((r * 0.349 + g * 0.686 + b * 0.168) + 0.5 | 0);
-        //dstPixels[i++] = this.utils.clamp((r * 0.272 + g * 0.534 + b * 0.131) + 0.5 | 0);
-        dstPixels[i]   = srcPixels[i++];
+        dstPixels[i]     = (value = r * 0.393 + g * 0.769 + b * 0.189) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
+        dstPixels[i + 1] = (value = r * 0.349 + g * 0.686 + b * 0.168) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
+        dstPixels[i + 2] = (value = r * 0.272 + g * 0.534 + b * 0.131) > 255 ? 255 : value < 0 ? 0 : value + 0.5 | 0;
+        dstPixels[i + 3] = srcPixels[i + 3];
     }
 
     return dstImageData;
@@ -1871,15 +1794,15 @@ ImageFilters.Transpose = function (srcImageData) {
     
     var srcIndex, dstIndex;
     
-    for (y = 0; y < srcHeight; ++y) {
-        for (x = 0; x < srcWidth; ++x) {
+    for (y = 0; y < srcHeight; y += 1) {
+        for (x = 0; x < srcWidth; x += 1) {
             srcIndex = (y * srcWidth + x) << 2;
             dstIndex = (x * srcHeight + y) << 2;
 
-            dstPixels[dstIndex]   = srcPixels[srcIndex];
-            dstPixels[++dstIndex] = srcPixels[++srcIndex];
-            dstPixels[++dstIndex] = srcPixels[++srcIndex];
-            dstPixels[++dstIndex] = srcPixels[++srcIndex];
+            dstPixels[dstIndex]     = srcPixels[srcIndex];
+            dstPixels[dstIndex + 1] = srcPixels[srcIndex + 1];
+            dstPixels[dstIndex + 2] = srcPixels[srcIndex + 2];
+            dstPixels[dstIndex + 3] = srcPixels[srcIndex + 3];
         }
     }
     
@@ -1914,26 +1837,22 @@ ImageFilters.Twril = function (srcImageData, centerX, centerY, radius, angle, ed
         dstIndex = 0,
         x, y, dx, dy, distance, a, tx, ty, srcIndex, pixel, i;
 
-    for (y = 0; y < srcHeight; ++y) {
-        for (x = 0; x < srcWidth; ++x) {
+    for (y = 0; y < srcHeight; y += 1) {
+        for (x = 0; x < srcWidth; x += 1) {
             dx = x - centerX;
             dy = y - centerY;
             distance = dx * dx + dy * dy;
-            //dstIndex = (y * srcWidth + x) << 2;
 
             if (distance > radius2) {
                 // out of the effected area. just copy the pixel
-                dstPixels[dstIndex] = srcPixels[dstIndex++];
-                dstPixels[dstIndex] = srcPixels[dstIndex++];
-                dstPixels[dstIndex] = srcPixels[dstIndex++];
-                dstPixels[dstIndex] = srcPixels[dstIndex++];
+                dstPixels[dstIndex]     = srcPixels[dstIndex];
+                dstPixels[dstIndex + 1] = srcPixels[dstIndex + 1];
+                dstPixels[dstIndex + 2] = srcPixels[dstIndex + 2];
+                dstPixels[dstIndex + 3] = srcPixels[dstIndex + 3];
             }
             else {
                 // main formula
                 distance = Math.sqrt(distance);
-
-                //float a = (float)Math.atan2(dy, dx) + (angle * (radius - distance)) / radius;
-
                 a  = Math.atan2(dy, dx) + (angle * (radius - distance)) / radius;
                 tx = centerX + distance * Math.cos(a);
                 ty = centerY + distance * Math.sin(a);
@@ -1942,18 +1861,20 @@ ImageFilters.Twril = function (srcImageData, centerX, centerY, radius, angle, ed
                 if (smooth) {
                     // bilinear
                     this.utils.copyBilinear(srcPixels, tx, ty, srcWidth, srcHeight, dstPixels, dstIndex, edge);
-                    dstIndex += 4;
                 }
                 else {
                     // nearest neighbor
                     // round tx, ty
+                    // TODO edge actions!!
                     srcIndex = ((ty + 0.5 | 0) * srcWidth + (tx + 0.5 | 0)) << 2;
-                    dstPixels[dstIndex++] = srcPixels[srcIndex++];
-                    dstPixels[dstIndex++] = srcPixels[srcIndex++];
-                    dstPixels[dstIndex++] = srcPixels[srcIndex++];
-                    dstPixels[dstIndex++] = srcPixels[srcIndex];
+                    dstPixels[dstIndex]     = srcPixels[srcIndex];
+                    dstPixels[dstIndex + 1] = srcPixels[srcIndex + 1];
+                    dstPixels[dstIndex + 2] = srcPixels[srcIndex + 2];
+                    dstPixels[dstIndex + 3] = srcPixels[srcIndex + 3];
                 }
             }
+            
+            dstIndex += 4;
         }
     }
 
