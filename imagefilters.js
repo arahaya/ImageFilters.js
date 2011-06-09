@@ -97,8 +97,8 @@ ImageFilters.utils = {
      * I want to make this as fast as possible.
      */
     copyBilinear: function (src, x, y, width, height, dst, dstIndex, edge) {
-        var fx = x | 0,
-            fy = y | 0,
+        var fx = x < 0 ? x - 1 | 0 : x | 0, // Math.floor(x)
+            fy = y < 0 ? y - 1 | 0 : y | 0, // Math.floor(y)
             wx = x - fx,
             wy = y - fy,
             i,
