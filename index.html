@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Imagefilters.js : A Javascript Image filter library for the HTML5 canvas tag." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Imagefilters.js</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/arahaya/ImageFilters.js">Fork Me on GitHub</a>
+
+          <h1 id="project_title">Imagefilters.js</h1>
+          <h2 id="project_tagline">A Javascript Image filter library for the HTML5 canvas tag.</h2>
+
+          <section id="downloads">
+            <a class="zip_download_link" href="https://github.com/arahaya/ImageFilters.js/zipball/master">Download this project as a .zip file</a>
+            <a class="tar_download_link" href="https://github.com/arahaya/ImageFilters.js/tarball/master">Download this project as a tar.gz file</a>
+          </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>ImageFilters.js</h1>
+
+<h3>About</h3>
+
+<p>A Javascript Image filter library for the HTML5 Canvas tag.  </p>
+
+<h3>Usage</h3>
+
+<p>include the library into your html.</p>
+
+<pre><code>&lt;script type="text/javascript" src="imagefilters.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>Each filter will take an ImageData as the first parameter
+and always return a modified copy. Below is a basic example.</p>
+
+<pre><code>&lt;script type="text/javascript"&gt;
+  var canvas = document.getElementById('canvas_id');
+  var ctx = canvas.getContext('2d');
+
+  // do some drawing to your context...
+
+  // create an ImageData for the area you want to apply the filter.
+  var imageData = ctx.getImageData(0, 0, 300, 200);
+
+  // pass it to a filter and get the modified copy
+  var filtered = ImageFilters.GrayScale(imageData);
+
+  // put it back into a context to view the results
+  ctx.putImageData(filterd, 0, 0);
+&lt;/script&gt;
+</code></pre>
+
+<p>check out the Examples section for more details.</p>
+
+<h3>Examples</h3>
+
+<p>Basic usage (view source)<br><a href="http://www.arahaya.com/imagefilters/usage1/">http://www.arahaya.com/imagefilters/usage1/</a>  </p>
+
+<p>API demos<br><a href="http://www.arahaya.com/imagefilters/">http://www.arahaya.com/imagefilters/</a>  </p>
+
+<p>Ripple effect demo<br><a href="http://www.arahaya.com/imagefilters/ripple/">http://www.arahaya.com/imagefilters/ripple/</a>  </p>
+
+<h3>Tested Browsers</h3>
+
+<p>Opera 10.50<br>
+Chrome 11.0.696.68<br>
+Firefox 3.5.4<br>
+IE 9  </p>
+
+<h3>API List</h3>
+
+<p>ImageFilters.ConvolutionFilter (srcImageData, matrixX, matrixY, matrix, divisor, bias, preserveAlpha, clamp, color, alpha)<br>
+ImageFilters.Binarize (srcImageData, threshold)<br>
+ImageFilters.BlendAdd (srcImageData, blendImageData, dx, dy)<br>
+ImageFilters.BlendSubtract (srcImageData, blendImageData, dx, dy)<br>
+ImageFilters.BoxBlur (srcImageData, hRadius, vRadius, quality)<br>
+ImageFilters.GaussianBlur (srcImageData, strength)<br>
+ImageFilters.StackBlur (srcImageData, radius)<br>
+ImageFilters.Brightness (srcImageData, brightness)<br>
+ImageFilters.BrightnessContrastGimp (srcImageData, brightness, contrast)<br>
+ImageFilters.BrightnessContrastPhotoshop (srcImageData, brightness, contrast)<br>
+ImageFilters.Channels (srcImageData, channel)<br>
+ImageFilters.Clone (srcImageData)<br>
+ImageFilters.CloneBuiltin (srcImageData)<br>
+ImageFilters.ColorMatrixFilter (srcImageData, matrix)<br>
+ImageFilters.ColorTransformFilter (srcImageData, redMultiplier, greenMultiplier, blueMultiplier, alphaMultiplier, redOffset, greenOffset, blueOffset, alphaOffset)<br>
+ImageFilters.Copy (srcImageData, dstImageData)<br>
+ImageFilters.Crop (srcImageData, x, y, width, height)<br>
+ImageFilters.CropBuiltin (srcImageData, x, y, width, height)<br>
+ImageFilters.Desaturate (srcImageData)<br>
+ImageFilters.DisplacementMapFilter (srcImageData, mapImageData, mapX, mapY, componentX, componentY, scaleX, scaleY, mode)<br>
+ImageFilters.Dither (srcImageData, levels)<br>
+ImageFilters.Edge (srcImageData)<br>
+ImageFilters.Emboss (srcImageData)<br>
+ImageFilters.Enrich (srcImageData)<br>
+ImageFilters.Flip (srcImageData, vertical)<br>
+ImageFilters.Gamma (srcImageData, gamma)<br>
+ImageFilters.GrayScale (srcImageData)<br>
+ImageFilters.HSLAdjustment (srcImageData, hueDelta, satDelta, lightness)<br>
+ImageFilters.Invert (srcImageData)<br>
+ImageFilters.Mosaic (srcImageData, blockSize)<br>
+ImageFilters.Oil (srcImageData, range, levels)<br>
+ImageFilters.OpacityFilter (srcImageData, opacity)<br>
+ImageFilters.Posterize (srcImageData, levels)<br>
+ImageFilters.Rescale (srcImageData, scale)<br>
+ImageFilters.Resize (srcImageData, width, height)<br>
+ImageFilters.ResizeNearestNeighbor (srcImageData, width, height)<br>
+ImageFilters.Sepia srcImageData)<br>
+ImageFilters.Sharpen (srcImageData, factor)<br>
+ImageFilters.Solarize (srcImageData)<br>
+ImageFilters.Transpose (srcImageData)<br>
+ImageFilters.Twril (srcImageData, centerX, centerY, radius, angle, edge, smooth)  </p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Imagefilters.js maintained by <a href="https://github.com/arahaya">arahaya</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
