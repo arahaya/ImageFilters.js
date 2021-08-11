@@ -28,7 +28,7 @@ and always return a modified copy. Below is a basic example.
 	  var filtered = ImageFilters.GrayScale(imageData);
 	  
 	  // put it back into a context to view the results
-	  ctx.putImageData(filterd, 0, 0);
+	  ctx.putImageData(filtered, 0, 0);
 	</script>
 
 check out the Examples section for more details.
